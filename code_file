@@ -1,0 +1,76 @@
+// Import the file system and path modules
+const fs = require("fs");
+const path = require("path");
+
+// Mapping file types to categories
+const categories = {
+  Images: [".png", ".jpg", ".jpeg", ".gif", ".svg"],
+  Documents: [".pdf", ".docx", ".txt", ".xlsx", ".pptx"],
+  Videos: [".mp4", ".mkv", ".avi", ".mov"],
+  Music: [".mp3", ".wav", ".flac"],
+  Archives: [".zip", ".rar", ".7z", ".tar"],
+};
+
+// Main function to organize files
+const organizeFiles = (targetDir) => {
+  if (!fs.existsSync(targetDir)) {
+    console.log("❌ Directory does not exist!");
+    return;
+  }
+
+  // Create 'Organized' folder if not exists
+  const organizedDir = path.join(targetDir, "Organized");
+  if (!fs.existsSync(organizedDir)) {
+    fs.mkdirSync(organizedDir);
+    console.log("📁 Created 'Organized' folder.");
+  }
+
+  // Read all files in the target directory
+  const files = fs.readdirSync(targetDir);
+
+  files.forEach((file) => {
+    const filePath = path.join(targetDir, file);
+    if (fs.lstatSync(filePath).isFile()) {
+      const ext = path.extname(file).toLowerCase();
+      const category = getCategory(ext);
+
+      moveFile(filePath, organizedDir, category);
+    }
+  });
+
+  console.log("✅ Files organized successfully!");
+};
+
+// Helper function to get file category based on extension
+const getCategory = (ext) => {
+  for (const [category, extensions] of Object.entries(categories)) {
+    if (extensions.includes(ext)) {
+      return category;
+    }
+  }
+  return "Others";
+};
+
+// Move the file to the corresponding folder
+const moveFile = (filePath, baseDir, category) => {
+  const categoryDir = path.join(baseDir, category);
+
+  if (!fs.existsSync(categoryDir)) {
+    fs.mkdirSync(categoryDir);
+    console.log(`📂 Created folder: ${category}`);
+  }
+
+  const fileName = path.basename(filePath);
+  const destination = path.join(categoryDir, fileName);
+
+  fs.renameSync(filePath, destination);
+  console.log('📦 Moved: ${fileName} → ${category}');
+};
+
+// Get target folder from command line input
+const targetFolder = process.argv[2];
+if (!targetFolder) {
+  console.log("📌 Usage: node organizer.js <folder_path>");
+} else {
+  organizeFiles(targetFolder);
+}
